@@ -1,7 +1,0 @@
-{
-  "name": "clean-credit-academy",
-  "version": "1.0.0",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.0.0"
-  }
-}
