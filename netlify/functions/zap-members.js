@@ -1,24 +1,29 @@
 // netlify/functions/zap-members.js
 const { createClient } = require('@supabase/supabase-js');
 
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+
 exports.handler = async (event) => {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
-
   try {
-    const payload = JSON.parse(event.body);
-    // Zapier passed through your JSON, so the array lives under `payload.data`
-    const members = payload.data;
+    const { members } = JSON.parse(event.body);
+    if (!Array.isArray(members)) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'Invalid members array' }) };
+    }
 
-    // Upsert into your `members` table
     const { data, error } = await supabase
       .from('members')
-      .upsert(members, { onConflict: 'member_id' }); // or 'id' if you named it that
+      .upsert(members, { onConflict: 'member_id' });
 
-    if (error) throw error;
-    return { statusCode: 200, body: JSON.stringify({ inserted: data.length }) };
+    if (error) {
+      throw error;
+    }
+
+    const inserted = Array.isArray(data) ? data.length : 0;
+    return { statusCode: 200, body: JSON.stringify({ inserted }) };
+
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
