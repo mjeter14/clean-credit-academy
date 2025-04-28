@@ -12,15 +12,15 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: 'Only POST allowed' };
   }
 
-  let token;
+  let token, memberId;
   try {
-    ({ token } = JSON.parse(event.body));
+    ({ token, memberId } = JSON.parse(event.body));
   } catch {
     return { statusCode: 400, body: 'Invalid JSON' };
   }
 
   try {
-    // 1) Fetch the JSON report
+    // POST memberId along with the Bearer token
     const resp = await fetch(
       'https://api.myfreescorenow.com/api/auth/3B/report.json',
       {
@@ -29,7 +29,7 @@ exports.handler = async (event) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        // no request body is needed here unless MFSN docs say otherwise
+        body: JSON.stringify({ memberId })
       }
     );
     if (!resp.ok) {
@@ -38,11 +38,9 @@ exports.handler = async (event) => {
     }
     const report = await resp.json();
 
-    // 2) Insert into Supabase
     const { data, error } = await supabase
       .from('credit_reports')
       .insert([{ report_data: report }]);
-
     if (error) throw error;
 
     return {
@@ -50,11 +48,10 @@ exports.handler = async (event) => {
       body: JSON.stringify({ inserted: data.length })
     };
   } catch (err) {
-    console.error('❌ fetch-report-json error:', err);
+    console.error('fetch-report-json error', err);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message })
     };
   }
 };
-
