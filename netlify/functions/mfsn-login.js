@@ -29,23 +29,19 @@ exports.handler = async (event) => {
         body: JSON.stringify(payload)
       }
     );
-    const json = await resp.json();
+    const js = await resp.json();
+    const token = js.data?.token;
+    if (!token) throw new Error('No token returned');
 
-    // pull the token out of json.data
-    const token = json.data?.token;
-    if (!token) {
-      throw new Error('No token in login response');
-    }
+    // Decode the JWT payload to grab `sub` as memberId:
+    const [, b64] = token.split('.');
+    const { sub: memberId } = JSON.parse(Buffer.from(b64, 'base64').toString());
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ token })
+      body: JSON.stringify({ token, memberId })
     };
   } catch (err) {
-    return {
-      statusCode: 401,
-      body: JSON.stringify({ error: err.message })
-    };
+    return { statusCode: 401, body: JSON.stringify({ error: err.message }) };
   }
 };
-
