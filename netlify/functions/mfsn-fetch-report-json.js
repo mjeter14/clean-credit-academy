@@ -2,8 +2,9 @@
 const fetch = require('node-fetch');
 const { createClient } = require('@supabase/supabase-js');
 
+// ← use your private Supabase URL (not NEXT_PUBLIC_…) here
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
 
@@ -47,6 +48,7 @@ exports.handler = async (event) => {
     const { data, error } = await supabase
       .from('credit_reports')
       .insert([{ report_data: report }]);
+
     if (error) throw error;
 
     return {
