@@ -19,17 +19,18 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: 'Invalid JSON' };
   }
 
-  // Log env + payload
+  // Debug: show what env vars we’re using
   console.log('ENV VARS:', {
-    sponsorCode: null,
-    aid: process.env.MFSN_AID,
-    pid: process.env.MFSN_PID
+    sponsorCode: process.env.MFSN_SPONSOR_CODE,
+    aid:         process.env.MFSN_AID,
+    pid:         process.env.MFSN_PID
   });
+
   const body = {
-    sponsorCode: null,
-    aid:      process.env.MFSN_AID,
-    pid:      process.env.MFSN_PID,
-    member_id: Number(memberId)
+    sponsorCode: process.env.MFSN_SPONSOR_CODE,
+    aid:         process.env.MFSN_AID,
+    pid:         process.env.MFSN_PID,
+    member_id:   Number(memberId)
   };
   console.log('➡️  Request body to /3B/report.json:', JSON.stringify(body));
 
@@ -46,7 +47,6 @@ exports.handler = async (event) => {
       }
     );
 
-    // capture full text for debug
     const text = await resp.text();
     console.log(`⬇️  Response ${resp.status} ${resp.statusText}:`, text);
 
@@ -73,5 +73,3 @@ exports.handler = async (event) => {
     };
   }
 };
-
-
