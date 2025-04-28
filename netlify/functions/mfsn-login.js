@@ -17,7 +17,10 @@ exports.handler = async (event) => {
     console.log('Parsed email/password:', email, password ? '••••••••' : '<no password>');
   } catch (err) {
     console.error('❌ JSON parse error:', err.message);
-    return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON', details: err.message }) };
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Invalid JSON', details: err.message })
+    };
   }
 
   try {
@@ -44,5 +47,3 @@ exports.handler = async (event) => {
     };
   }
 };
-
-
