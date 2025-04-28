@@ -1,49 +1,39 @@
-// netlify/functions/mfsn-fetch-report-json.js
-const { callMFSN } = require('./_mfsn');
-const { createClient } = require('@supabase/supabase-js');
+// netlify/functions/_mfsn.js
+const fetch = require('node-fetch');
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+const BASE = 'https://api.myfreescorenow.com';
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Only POST allowed' };
-  }
+async function callMFSN(path, token, extra = {}) {
+  // Always include the affiliate context
+  const body = {
+    sponsorCode: process.env.MFSN_SPONSOR_CODE,
+    aid:         process.env.MFSN_AID,
+    pid:         process.env.MFSN_PID,
+    ...extra
+  };
 
-  let token, memberId;
+  const res = await fetch(`${BASE}/${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type':  'application/json',
+      ...(token && { Authorization: `Bearer ${token}` })
+    },
+    body: JSON.stringify(body)
+  });
+
+  const text = await res.text();
+  let json;
   try {
-    ({ token, memberId } = JSON.parse(event.body));
-  } catch (e) {
-    return { statusCode: 400, body: 'Invalid JSON' };
+    json = JSON.parse(text);
+  } catch {
+    throw new Error(`Invalid JSON from MFSN: ${text}`);
   }
 
-  try {
-    // path is relative to BASE inside _mfsn.js
-    const report = await callMFSN(
-      'api/auth/3B/report.json',
-      token,
-      { member_id: Number(memberId) }
-    );
-
-    // insert into Supabase
-    const { data, error } = await supabase
-      .from('credit_reports')
-      .insert([{ report_data: report }]);
-
-    if (error) throw error;
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ inserted: data.length })
-    };
-
-  } catch (err) {
-    console.error('fetch-report-json error:', err);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message })
-    };
+  if (!json.success) {
+    throw new Error(json.error || `MFSN ${path} failed`);
   }
-};
+
+  return json.data;
+}
+
+module.exports = { callMFSN };
