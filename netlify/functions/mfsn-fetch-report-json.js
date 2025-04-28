@@ -20,13 +20,15 @@ exports.handler = async (event) => {
   }
 
   const body = {
-    // both variants in case the API expects a different field name
     sponsorCode:   process.env.MFSN_SPONSOR_CODE,
     affiliateCode: process.env.MFSN_SPONSOR_CODE,
     aid:           process.env.MFSN_AID,
     pid:           process.env.MFSN_PID,
     cobrandPid:    process.env.MFSN_PID,
-    member_id:     Number(memberId)
+
+    // both snake and camel case
+    member_id:   Number(memberId),
+    memberId:    Number(memberId)
   };
 
   console.log('➡️  Request body to /3B/report.json:', JSON.stringify(body));
