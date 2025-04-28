@@ -19,19 +19,16 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: 'Invalid JSON' };
   }
 
-  // Debug: show what env vars we’re using
-  console.log('ENV VARS:', {
-    sponsorCode: process.env.MFSN_SPONSOR_CODE,
-    aid:         process.env.MFSN_AID,
-    pid:         process.env.MFSN_PID
-  });
-
   const body = {
-    sponsorCode: process.env.MFSN_SPONSOR_CODE,
-    aid:         process.env.MFSN_AID,
-    pid:         process.env.MFSN_PID,
-    member_id:   Number(memberId)
+    // both variants in case the API expects a different field name
+    sponsorCode:   process.env.MFSN_SPONSOR_CODE,
+    affiliateCode: process.env.MFSN_SPONSOR_CODE,
+    aid:           process.env.MFSN_AID,
+    pid:           process.env.MFSN_PID,
+    cobrandPid:    process.env.MFSN_PID,
+    member_id:     Number(memberId)
   };
+
   console.log('➡️  Request body to /3B/report.json:', JSON.stringify(body));
 
   try {
@@ -48,14 +45,13 @@ exports.handler = async (event) => {
     );
 
     const text = await resp.text();
-    console.log(`⬇️  Response ${resp.status} ${resp.statusText}:`, text);
+    console.log(`⬇️  Response ${resp.status}:`, text);
 
     if (!resp.ok) {
       throw new Error(`Report fetch failed: ${resp.status} ${text}`);
     }
 
     const report = JSON.parse(text);
-
     const { data, error } = await supabase
       .from('credit_reports')
       .insert([{ report_data: report }]);
