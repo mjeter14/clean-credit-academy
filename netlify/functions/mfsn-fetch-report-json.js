@@ -2,8 +2,9 @@
 const fetch = require('node-fetch');
 const { createClient } = require('@supabase/supabase-js');
 
+// Use your server‐side vars here
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
 
@@ -27,11 +28,11 @@ exports.handler = async (event) => {
       {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          Authorization: `Bearer ${token}`
+          'Content-Type':  'application/json',
+          'Accept':        'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({})  // empty payload per latest requirements
+        body: JSON.stringify({})  // per the updated API requirements
       }
     );
 
