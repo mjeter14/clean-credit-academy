@@ -12,26 +12,14 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: 'Only POST allowed' };
   }
 
-  let token, memberId;
+  let token;
   try {
-    ({ token, memberId } = JSON.parse(event.body));
+    ({ token } = JSON.parse(event.body));
   } catch {
     return { statusCode: 400, body: 'Invalid JSON' };
   }
 
-  const body = {
-    sponsorCode:   process.env.MFSN_SPONSOR_CODE,
-    affiliateCode: process.env.MFSN_SPONSOR_CODE,
-    aid:           process.env.MFSN_AID,
-    pid:           process.env.MFSN_PID,
-    cobrandPid:    process.env.MFSN_PID,
-
-    // both snake and camel case
-    member_id:   Number(memberId),
-    memberId:    Number(memberId)
-  };
-
-  console.log('➡️  Request body to /3B/report.json:', JSON.stringify(body));
+  console.log('➡️  Fetching 3B report with token:', token.slice(0,10) + '…');
 
   try {
     const resp = await fetch(
@@ -40,9 +28,10 @@ exports.handler = async (event) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify({})  // empty payload per latest requirements
       }
     );
 
@@ -54,6 +43,7 @@ exports.handler = async (event) => {
     }
 
     const report = JSON.parse(text);
+
     const { data, error } = await supabase
       .from('credit_reports')
       .insert([{ report_data: report }]);
