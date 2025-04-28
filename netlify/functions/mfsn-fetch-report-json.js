@@ -20,7 +20,6 @@ exports.handler = async (event) => {
   }
 
   try {
-    // POST memberId along with the Bearer token
     const resp = await fetch(
       'https://api.myfreescorenow.com/api/auth/3B/report.json',
       {
@@ -29,7 +28,9 @@ exports.handler = async (event) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ memberId })
+        body: JSON.stringify({
+          member_id: Number(memberId)
+        })
       }
     );
     if (!resp.ok) {
