@@ -2,9 +2,8 @@
 const fetch = require('node-fetch');
 const { createClient } = require('@supabase/supabase-js');
 
-// Use your server‐side vars here
 const supabase = createClient(
-  process.env.SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
 
@@ -13,14 +12,14 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: 'Only POST allowed' };
   }
 
-  let token;
+  let token, username, password;
   try {
-    ({ token } = JSON.parse(event.body));
-  } catch {
+    ({ token, username, password } = JSON.parse(event.body));
+  } catch (e) {
     return { statusCode: 400, body: 'Invalid JSON' };
   }
 
-  console.log('➡️  Fetching 3B report with token:', token.slice(0,10) + '…');
+  console.log('➡️  Fetching 3B report for', username);
 
   try {
     const resp = await fetch(
@@ -28,11 +27,10 @@ exports.handler = async (event) => {
       {
         method: 'POST',
         headers: {
-          'Content-Type':  'application/json',
-          'Accept':        'application/json',
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({})  // per the updated API requirements
+        body: JSON.stringify({ username, password })
       }
     );
 
@@ -45,6 +43,7 @@ exports.handler = async (event) => {
 
     const report = JSON.parse(text);
 
+    // store in Supabase
     const { data, error } = await supabase
       .from('credit_reports')
       .insert([{ report_data: report }]);
