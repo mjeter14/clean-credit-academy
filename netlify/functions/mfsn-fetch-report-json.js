@@ -20,6 +20,14 @@ exports.handler = async (event) => {
   }
 
   try {
+    // include sponsorCode, aid, pid, and member_id per MFSN requirements
+    const body = {
+      sponsorCode: null,
+      aid:      process.env.MFSN_AID,
+      pid:      process.env.MFSN_PID,
+      member_id: Number(memberId)
+    };
+
     const resp = await fetch(
       'https://api.myfreescorenow.com/api/auth/3B/report.json',
       {
@@ -28,20 +36,21 @@ exports.handler = async (event) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({
-          member_id: Number(memberId)
-        })
+        body: JSON.stringify(body)
       }
     );
+
     if (!resp.ok) {
       const text = await resp.text();
       throw new Error(`Report fetch failed: ${resp.status} ${text}`);
     }
+
     const report = await resp.json();
 
     const { data, error } = await supabase
       .from('credit_reports')
       .insert([{ report_data: report }]);
+
     if (error) throw error;
 
     return {
@@ -56,3 +65,4 @@ exports.handler = async (event) => {
     };
   }
 };
+
