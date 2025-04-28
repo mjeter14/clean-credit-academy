@@ -9,39 +9,45 @@ exports.handler = async (event) => {
   let email, password;
   try {
     ({ email, password } = JSON.parse(event.body));
-  } catch {
-    return { statusCode: 400, body: 'Invalid JSON' };
+  } catch (err) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Invalid JSON', details: err.message })
+    };
   }
 
-  const payload = {
-    aid: process.env.MFSN_AID,
-    pid: process.env.MFSN_PID,
-    email,
-    password
-  };
-
   try {
-    const resp = await fetch(
-      'https://api.myfreescorenow.com/api/auth/login',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      }
-    );
-    const js = await resp.json();
-    const token = js.data?.token;
-    if (!token) throw new Error('No token returned');
+    // 1) Call MFSN login with only email/password
+    const res = await fetch('https://api.myfreescorenow.com/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const json = await res.json();
+    if (!json.success) {
+      throw new Error(json.error || 'Login failed');
+    }
 
-    // Decode the JWT payload to grab `sub` as memberId:
-    const [, b64] = token.split('.');
-    const { sub: memberId } = JSON.parse(Buffer.from(b64, 'base64').toString());
+    // 2) Pull out the token
+    const token = json.data.token;
+    if (!token) {
+      throw new Error('No token returned from login');
+    }
+
+    // 3) Decode the JWT to get memberId from the `sub` claim
+    const [, payloadB64] = token.split('.');
+    const { sub: memberId } =
+      JSON.parse(Buffer.from(payloadB64, 'base64').toString());
 
     return {
       statusCode: 200,
       body: JSON.stringify({ token, memberId })
     };
+
   } catch (err) {
-    return { statusCode: 401, body: JSON.stringify({ error: err.message }) };
+    return {
+      statusCode: 401,
+      body: JSON.stringify({ error: err.message })
+    };
   }
 };
