@@ -17,24 +17,25 @@ exports.handler = async (event) => {
   }
 
   try {
-    // 1) Call MFSN login with only email/password
+    // Send full affiliate context
     const res = await fetch('https://api.myfreescorenow.com/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({
+        sponsorCode: process.env.MFSN_SPONSOR_CODE,
+        aid:         process.env.MFSN_AID,
+        pid:         process.env.MFSN_PID,
+        email,
+        password
+      })
     });
     const json = await res.json();
-    if (!json.success) {
-      throw new Error(json.error || 'Login failed');
-    }
+    if (!json.success) throw new Error(json.error || 'Login failed');
 
-    // 2) Pull out the token
     const token = json.data.token;
-    if (!token) {
-      throw new Error('No token returned from login');
-    }
+    if (!token) throw new Error('No token returned');
 
-    // 3) Decode the JWT to get memberId from the `sub` claim
+    // decode sub claim for memberId
     const [, payloadB64] = token.split('.');
     const { sub: memberId } =
       JSON.parse(Buffer.from(payloadB64, 'base64').toString());
@@ -43,7 +44,6 @@ exports.handler = async (event) => {
       statusCode: 200,
       body: JSON.stringify({ token, memberId })
     };
-
   } catch (err) {
     return {
       statusCode: 401,
