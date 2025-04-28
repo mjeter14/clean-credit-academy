@@ -9,18 +9,16 @@ exports.handler = async (event) => {
   let email, password;
   try {
     ({ email, password } = JSON.parse(event.body));
-  } catch (err) {
+  } catch {
     return { statusCode: 400, body: 'Invalid JSON' };
   }
 
-  // Build the payload
   const payload = {
     aid: process.env.MFSN_AID,
     pid: process.env.MFSN_PID,
     email,
     password
   };
-  console.log('Calling raw login with payload:', payload);
 
   try {
     const resp = await fetch(
@@ -31,20 +29,23 @@ exports.handler = async (event) => {
         body: JSON.stringify(payload)
       }
     );
-
     const json = await resp.json();
-    console.log('📥 FULL login response from MFSN:', JSON.stringify(json));
 
-    // For now, just return it so we can inspect
+    // pull the token out of json.data
+    const token = json.data?.token;
+    if (!token) {
+      throw new Error('No token in login response');
+    }
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ json })
+      body: JSON.stringify({ token })
     };
   } catch (err) {
-    console.error('Fetch error:', err);
     return {
-      statusCode: 500,
+      statusCode: 401,
       body: JSON.stringify({ error: err.message })
     };
   }
 };
+
