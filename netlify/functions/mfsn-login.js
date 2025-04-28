@@ -2,9 +2,7 @@
 const { callMFSN } = require('./_mfsn');
 
 exports.handler = async (event) => {
-  console.log('⚡️ mfsn-login invoked');
   if (event.httpMethod !== 'POST') {
-    console.log('Method not allowed:', event.httpMethod);
     return { statusCode: 405, body: 'Only POST allowed' };
   }
 
@@ -12,12 +10,11 @@ exports.handler = async (event) => {
   try {
     ({ email, password } = JSON.parse(event.body));
   } catch (err) {
-    console.error('JSON parse error:', err.message);
-    return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON' }) };
+    return { statusCode: 400, body: 'Invalid JSON' };
   }
 
   try {
-    // callMFSN returns the parsed JSON from the API
+    // Call the MFSN login endpoint:
     const raw = await callMFSN(
       '/api/auth/login',
       null,
@@ -28,27 +25,17 @@ exports.handler = async (event) => {
         password
       }
     );
-    console.log('📥 Raw login response:', JSON.stringify(raw));
 
-    // Adjust this destructuring to match the actual shape
-    // (most likely it's raw.data.token and raw.data.userId)
-    const token   = raw.data?.token   ?? raw.token;
-    const userId  = raw.data?.userId  ?? raw.userId;
-
-    if (!token || !userId) {
-      throw new Error('Missing token or userId in login response');
-    }
-
-    console.log('✅ Login succeeded, token length:', token.length, ' userId:', userId);
+    // *** DEBUG: return raw payload verbatim ***
     return {
       statusCode: 200,
-      body: JSON.stringify({ token, userId })
+      body: JSON.stringify({ raw })
     };
   } catch (err) {
-    console.error('Login failed:', err.message);
     return {
-      statusCode: 401,
+      statusCode: 500,
       body: JSON.stringify({ error: err.message })
     };
   }
 };
+
