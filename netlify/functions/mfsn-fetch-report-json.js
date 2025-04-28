@@ -19,15 +19,21 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: 'Invalid JSON' };
   }
 
-  try {
-    // include sponsorCode, aid, pid, and member_id per MFSN requirements
-    const body = {
-      sponsorCode: null,
-      aid:      process.env.MFSN_AID,
-      pid:      process.env.MFSN_PID,
-      member_id: Number(memberId)
-    };
+  // Log env + payload
+  console.log('ENV VARS:', {
+    sponsorCode: null,
+    aid: process.env.MFSN_AID,
+    pid: process.env.MFSN_PID
+  });
+  const body = {
+    sponsorCode: null,
+    aid:      process.env.MFSN_AID,
+    pid:      process.env.MFSN_PID,
+    member_id: Number(memberId)
+  };
+  console.log('➡️  Request body to /3B/report.json:', JSON.stringify(body));
 
+  try {
     const resp = await fetch(
       'https://api.myfreescorenow.com/api/auth/3B/report.json',
       {
@@ -40,17 +46,19 @@ exports.handler = async (event) => {
       }
     );
 
+    // capture full text for debug
+    const text = await resp.text();
+    console.log(`⬇️  Response ${resp.status} ${resp.statusText}:`, text);
+
     if (!resp.ok) {
-      const text = await resp.text();
       throw new Error(`Report fetch failed: ${resp.status} ${text}`);
     }
 
-    const report = await resp.json();
+    const report = JSON.parse(text);
 
     const { data, error } = await supabase
       .from('credit_reports')
       .insert([{ report_data: report }]);
-
     if (error) throw error;
 
     return {
@@ -58,11 +66,12 @@ exports.handler = async (event) => {
       body: JSON.stringify({ inserted: data.length })
     };
   } catch (err) {
-    console.error('fetch-report-json error', err);
+    console.error('❌ fetch-report-json error:', err);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message })
     };
   }
 };
+
 
