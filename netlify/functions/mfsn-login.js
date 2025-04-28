@@ -1,62 +1,55 @@
-// netlify/functions/mfsn-fetch-report-json.js
+// netlify/functions/mfsn-login.js
 const fetch = require('node-fetch');
-const { createClient } = require('@supabase/supabase-js');
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Only POST allowed' };
   }
 
-  let token;
+  let email, password;
   try {
-    ({ token } = JSON.parse(event.body));
-  } catch {
-    return { statusCode: 400, body: 'Invalid JSON' };
+    ({ email, password } = JSON.parse(event.body));
+  } catch (err) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Invalid JSON', details: err.message })
+    };
   }
 
-  console.log('➡️  Fetching 3B report with token:', token.slice(0,10) + '…');
+  const payload = {
+    sponsorCode: process.env.MFSN_SPONSOR_CODE,
+    aid:         process.env.MFSN_AID,
+    pid:         process.env.MFSN_PID,
+    email,
+    password
+  };
 
   try {
-    const resp = await fetch(
-      'https://api.myfreescorenow.com/api/auth/3B/report.json',
+    const res = await fetch(
+      'https://api.myfreescorenow.com/api/auth/login',
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({})  // empty payload per latest requirements
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       }
     );
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Login failed');
 
-    const text = await resp.text();
-    console.log(`⬇️  Response ${resp.status}:`, text);
+    const token = json.data.token;
+    if (!token) throw new Error('No token returned');
 
-    if (!resp.ok) {
-      throw new Error(`Report fetch failed: ${resp.status} ${text}`);
-    }
-
-    const report = JSON.parse(text);
-
-    const { data, error } = await supabase
-      .from('credit_reports')
-      .insert([{ report_data: report }]);
-    if (error) throw error;
+    // Decode the JWT payload to get memberId from the `sub` claim
+    const [, payloadB64] = token.split('.');
+    const { sub: memberId } = JSON.parse(Buffer.from(payloadB64, 'base64').toString());
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ inserted: data.length })
+      body: JSON.stringify({ token, memberId })
     };
   } catch (err) {
-    console.error('❌ fetch-report-json error:', err);
     return {
-      statusCode: 500,
+      statusCode: 401,
       body: JSON.stringify({ error: err.message })
     };
   }
