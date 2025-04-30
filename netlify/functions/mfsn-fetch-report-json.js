@@ -1,65 +1,51 @@
 // netlify/functions/mfsn-fetch-report-json.js
 const fetch = require('node-fetch');
+const FormData = require('form-data');
 const { createClient } = require('@supabase/supabase-js');
 
-// ← use your private Supabase URL (not NEXT_PUBLIC_…) here
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_URL,           // ✔ private URL
+  process.env.SUPABASE_SERVICE_KEY    // ✔ service key
 );
 
 exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
+  if (event.httpMethod !== 'POST')
     return { statusCode: 405, body: 'Only POST allowed' };
-  }
 
   let token, username, password;
-  try {
-    ({ token, username, password } = JSON.parse(event.body));
-  } catch (e) {
-    return { statusCode: 400, body: 'Invalid JSON' };
-  }
+  try { ({ token, username, password } = JSON.parse(event.body)); }
+  catch { return { statusCode: 400, body: 'Invalid JSON' }; }
 
-  console.log('➡️  Fetching 3B report for', username);
+  // build the multipart/form-data body
+  const fd = new FormData();
+  fd.append('username', username);
+  fd.append('password', password);
 
   try {
-    const resp = await fetch(
+    const apiResp = await fetch(
       'https://api.myfreescorenow.com/api/auth/3B/report.json',
       {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ username, password })
+        method : 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body   : fd          // ← form-data body
       }
     );
 
-    const text = await resp.text();
-    console.log(`⬇️  Response ${resp.status}:`, text);
+    const raw = await apiResp.text();
+    if (!apiResp.ok) throw new Error(`Report fetch failed: ${apiResp.status} ${raw}`);
 
-    if (!resp.ok) {
-      throw new Error(`Report fetch failed: ${resp.status} ${text}`);
-    }
-
-    const report = JSON.parse(text);
+    const report = JSON.parse(raw);
 
     // store in Supabase
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('credit_reports')
       .insert([{ report_data: report }]);
-
     if (error) throw error;
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ inserted: data.length })
-    };
+    return { statusCode: 200, body: JSON.stringify({ inserted: 1 }) };
   } catch (err) {
-    console.error('❌ fetch-report-json error:', err);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message })
-    };
+    console.error('mfsn-fetch-report-json error', err);
+    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };
+
