@@ -6,29 +6,28 @@ const BASE = 'https://api.myfreescorenow.com/api/auth';
  * callMFSN(path, token, fields)
  *
  * @param {string} path    – e.g. "login" or "3B/report.json"
- * @param {?string} token  – omit for login, otherwise affiliate JWT
- * @param {object} fields  – form fields (email/password or username/password)
+ * @param {?string} token  – omit for login, otherwise your affiliate JWT
+ * @param {object} fields  – form fields to send (email/password or username/password/member_id)
  */
 async function callMFSN(path, token, fields = {}) {
-  // dynamic import fetch (ESM) in Node.js
+  // dynamic import of fetch for node-fetch v3 ESM
   const fetch = (await import('node-fetch')).default;
 
-  // build form-data
+  // build a multipart/form-data body
   const fd = new FormData();
   if (process.env.MFSN_SPONSOR_CODE) fd.append('sponsorCode', process.env.MFSN_SPONSOR_CODE);
   if (process.env.MFSN_AID)          fd.append('aid',          process.env.MFSN_AID);
   if (process.env.MFSN_PID)          fd.append('pid',          process.env.MFSN_PID);
 
-  // add custom fields
-  for (const [k, v] of Object.entries(fields)) {
-    fd.append(k, v == null ? '' : String(v));
+  for (const [key, val] of Object.entries(fields)) {
+    fd.append(key, val == null ? '' : String(val));
   }
 
   const res = await fetch(`${BASE}/${path}`, {
     method: 'POST',
     headers: {
-      // only Authorization if token is truthy
-      ...(token && { Authorization: `Bearer ${token}` })
+      ...(token && { Authorization: `Bearer ${token}` }),
+      // content-type & boundary set automatically by form-data
     },
     body: fd
   });
@@ -47,6 +46,7 @@ async function callMFSN(path, token, fields = {}) {
 }
 
 module.exports = { callMFSN };
+
 
 
 
