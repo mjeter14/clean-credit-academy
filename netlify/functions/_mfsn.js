@@ -1,39 +1,50 @@
 // netlify/functions/_mfsn.js
+
+// ───────────────────────────────────────────────────────────
+// Trick Netlify’s bundler into packaging node-fetch
+// ───────────────────────────────────────────────────────────
+if (false) {
+  // this will never run, but ensures node-fetch ends up
+  // in the zip so dynamic import() works at runtime
+  require('node-fetch');
+}
+
+// pull in FormData for multipart bodies
 const FormData = require('form-data');
 
-// Point this at the “/api/auth” root
+// Point this at MFSN’s auth root
 const BASE = 'https://api.myfreescorenow.com/api/auth';
 
 /**
  * callMFSN(path, token, extra)
  *
  * @param {string} path    — e.g. "login" or "3B/report.json"
- * @param {string|null} token   — affiliate JWT (omit for login)
- * @param {object} extra   — additional form fields
+ * @param {string} token   — affiliate JWT (omit for login)
+ * @param {object} extra   — additional form fields (username, password, member_id, etc)
  *
  * @returns {Promise<any>} — the `data` payload from the MFSN response
  */
-async function callMFSN(path, token = null, extra = {}) {
-  // dynamic import to work around node-fetch ESM requirement
+async function callMFSN(path, token, extra = {}) {
+  // dynamic import of the ESM-only node-fetch
   const fetch = (await import('node-fetch')).default;
 
-  // build multipart/form-data body
+  // build a multipart/form-data body
   const fd = new FormData();
   if (process.env.MFSN_SPONSOR_CODE) fd.append('sponsorCode', process.env.MFSN_SPONSOR_CODE);
   if (process.env.MFSN_AID)          fd.append('aid',          process.env.MFSN_AID);
   if (process.env.MFSN_PID)          fd.append('pid',          process.env.MFSN_PID);
 
-  // append any extra fields
-  for (const [key, value] of Object.entries(extra)) {
-    fd.append(key, value == null ? '' : value.toString());
+  // append any extra fields (email/password or member_id)
+  for (const [k, v] of Object.entries(extra)) {
+    fd.append(k, v == null ? '' : v.toString());
   }
 
-  // perform the POST
+  // do the POST
   const res = await fetch(`${BASE}/${path}`, {
     method: 'POST',
     headers: {
-      // form-data sets Content-Type for us
       ...(token && { Authorization: `Bearer ${token}` })
+      // note: we DO NOT set Content-Type here; form-data will do it for us
     },
     body: fd
   });
@@ -49,9 +60,11 @@ async function callMFSN(path, token = null, extra = {}) {
   if (!json.success) {
     throw new Error(json.error || `MFSN ${path} failed`);
   }
+
   return json.data;
 }
 
 module.exports = { callMFSN };
+
 
 
