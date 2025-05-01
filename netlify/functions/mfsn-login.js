@@ -1,22 +1,21 @@
 // netlify/functions/mfsn-login.js
 const { callMFSN } = require('./_mfsn');
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
+exports.handler = async ({ httpMethod, body }) => {
+  if (httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Only POST allowed' };
   }
 
   let email, password;
   try {
-    ({ email, password } = JSON.parse(event.body));
+    ({ email, password } = JSON.parse(body));
   } catch {
     return { statusCode: 400, body: 'Invalid JSON' };
   }
 
   try {
-    // this will POST form-data to /login
+    // affiliate login → returns { token, userId, ... }
     const data = await callMFSN('login', null, { email, password });
-
     return {
       statusCode: 200,
       body: JSON.stringify({
@@ -31,6 +30,7 @@ exports.handler = async (event) => {
     };
   }
 };
+
 
 
 
