@@ -1,7 +1,10 @@
+--- a/netlify.toml
++++ b/netlify.toml
 [build]
-  # No front-end build output—just functions
-  publish   = "."                   
-  functions = "netlify/functions"
++  command   = "npm install"
+   publish   = "."
+   functions = "netlify/functions"
 
 [dev]
-  functions  = "netlify/functions"  # for local `netlify dev`
+   functions = "netlify/functions"
+
