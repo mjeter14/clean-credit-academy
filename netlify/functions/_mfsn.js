@@ -1,32 +1,51 @@
 // netlify/functions/_mfsn.js
-const fetch = require('node-fetch');
 
-const BASE = 'https://api.myfreescorenow.com';
+const FormData = require('form-data');
 
+// Point this at the “/api/auth” root
+const BASE = 'https://api.myfreescorenow.com/api/auth';
+
+/**
+ * callMFSN(path, token, extra)
+ *
+ * @param {string} path    — e.g. "login" or "3B/report.json"
+ * @param {string} token   — affiliate JWT (omit for login)
+ * @param {object} extra   — additional form fields (e.g. { username, password, member_id })
+ *
+ * @returns {Promise<any>} — the `data` payload from the MFSN response
+ */
 async function callMFSN(path, token, extra = {}) {
-  // Always include the affiliate context
-  const body = {
-    sponsorCode: process.env.MFSN_SPONSOR_CODE,
-    aid:         process.env.MFSN_AID,
-    pid:         process.env.MFSN_PID,
-    ...extra
-  };
+  // dynamic import to work around node-fetch ESM requirement
+  const fetch = (await import('node-fetch')).default;
 
+  // build form-data body
+  const fd = new FormData();
+  // always include sponsorCode, AID, PID
+  if (process.env.MFSN_SPONSOR_CODE) fd.append('sponsorCode', process.env.MFSN_SPONSOR_CODE);
+  if (process.env.MFSN_AID)          fd.append('aid',          process.env.MFSN_AID);
+  if (process.env.MFSN_PID)          fd.append('pid',          process.env.MFSN_PID);
+
+  // append any extra fields
+  for (const [key, value] of Object.entries(extra)) {
+    fd.append(key, value == null ? '' : value.toString());
+  }
+
+  // make the POST
   const res = await fetch(`${BASE}/${path}`, {
     method: 'POST',
     headers: {
-      'Content-Type':  'application/json',
+      // the form-data lib will set Content-Type and boundary for us
       ...(token && { Authorization: `Bearer ${token}` })
     },
-    body: JSON.stringify(body)
+    body: fd
   });
 
   const text = await res.text();
   let json;
   try {
     json = JSON.parse(text);
-  } catch {
-    throw new Error(`Invalid JSON from MFSN: ${text}`);
+  } catch (err) {
+    throw new Error(`Invalid JSON from MFSN (${path}): ${text}`);
   }
 
   if (!json.success) {
@@ -37,3 +56,4 @@ async function callMFSN(path, token, extra = {}) {
 }
 
 module.exports = { callMFSN };
+
