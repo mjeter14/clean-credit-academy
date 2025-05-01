@@ -1,0 +1,6 @@
+[build]
+  publish    = "public"             # or wherever your static output lives
+  functions  = "netlify/functions"  # point Netlify at that folder
+
+[dev]
+  functions  = "netlify/functions"  # for local `netlify dev`
