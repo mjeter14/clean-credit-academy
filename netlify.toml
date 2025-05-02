@@ -1,14 +1,14 @@
+# netlify.toml
 [build]
-  # 1️⃣ Change this to the folder where your Vite app really lives
+  base      = "thecleancreditacademy-frontend"     # <-- your Vite app folder
+  command   = "npm ci && npm run build"            # <-- install & build your Vite app
+  publish   = "thecleancreditacademy-frontend/dist" # <-- where Vite outputs the static site
+  functions = "netlify/functions"                  # <-- your Netlify Functions folder
+
+[dev]
   base      = "thecleancreditacademy-frontend"
-
-  # 2️⃣ How to install & build your front-end
-  command   = "npm install && npm run build"
-
-  # 3️⃣ Where the built files end up
-  publish   = "thecleancreditacademy-frontend/dist"
-
-  # 4️⃣ Your Netlify Functions folder
+  command   = "npm run dev"
   functions = "netlify/functions"
+
 
 
