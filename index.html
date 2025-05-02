@@ -8,8 +8,11 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- ↓ relative path, not absolute! -->
-    <script type="module" src="./src/main.tsx"></script>
+-   <!-- note the leading slash here: -->
+-   <script type="module" src="/src/main.tsx"></script>
++   <!-- make it relative so Rollup can resolve it locally: -->
++   <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>
+
 
