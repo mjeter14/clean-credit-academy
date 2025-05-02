@@ -1,14 +1,7 @@
-# netlify.toml
 [build]
-  base      = "thecleancreditacademy-frontend"     # <-- your Vite app folder
-  command   = "npm ci && npm run build"            # <-- install & build your Vite app
-  publish   = "thecleancreditacademy-frontend/dist" # <-- where Vite outputs the static site
-  functions = "netlify/functions"                  # <-- your Netlify Functions folder
-
-[dev]
-  base      = "thecleancreditacademy-frontend"
-  command   = "npm run dev"
+  command   = "npm install"
+  publish   = "."
   functions = "netlify/functions"
 
-
-
+[dev]
+  functions = "netlify/functions"
