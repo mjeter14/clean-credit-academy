@@ -1,6 +1,10 @@
 [build]
-  # Change this to the folder where your Vite app actually lives:
+  # Path to your Vite app’s folder (where package.json & index.html live)
   base      = "thecleancreditacademy-frontend"
+  # Install & build your Vite project
   command   = "npm install && npm run build"
+  # Publish the built files
   publish   = "thecleancreditacademy-frontend/dist"
+  # Your Netlify Functions directory
   functions = "netlify/functions"
+
