@@ -1,9 +1,4 @@
 [build]
-  command   = "npm run build"       # uses your package.json “build” script
-  publish   = "dist"                # ← point at Vite’s output folder
+  command   = "npm run build"
+  publish   = "dist"
   functions = "netlify/functions"
-
-[dev]
-  command   = "npm run dev"         # only for local netlify dev
-  functions = "netlify/functions"
-
