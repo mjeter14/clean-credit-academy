@@ -2,13 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- If you have a favicon in your public folder: -->
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Clean Credit Academy</title>
   </head>
   <body>
     <div id="root"></div>
-    <!-- make it relative so Rollup can resolve it locally: -->
-    <script type="module" src="./src/main.tsx"></script>
+    <!-- Vite requires an absolute import from the project root here -->
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
