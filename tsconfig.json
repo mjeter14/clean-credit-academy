@@ -16,10 +16,19 @@
       "@utils/*": ["src/utils/*"],
       "@hooks/*": ["src/hooks/*"],
       "@assets/*": ["src/assets/*"],
-      "@types/*": ["src/types/*"]
+      "@types/*": ["src/types/*"],
+      "@styles/*": ["src/styles/*"],
+      "@contexts/*": ["src/contexts/*"]
     },
-    "types": ["vite/client", "vitest"],
-    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "types": [
+      "vite/client",
+      "vitest",
+      "@testing-library/jest-dom"
+    ],
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types"
+    ],
     "allowJs": false,
     "allowSyntheticDefaultImports": true,
     "noUnusedLocals": true,
@@ -29,17 +38,31 @@
     "isolatedModules": true,
     "resolveJsonModule": true,
     "jsxImportSource": "@emotion/react",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable",
+      "WebWorker"
+    ],
     "outDir": "./dist",
     "rootDir": "./src",
     "declaration": true,
     "emitDeclarationOnly": false,
-    "noEmit": false
+    "noEmit": false,
+    "incremental": true,
+    "composite": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   },
   "include": [
     "src",
     "vite.config.ts",
-    "src/vite-env.d.ts"
+    "src/vite-env.d.ts",
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
@@ -47,9 +70,12 @@
     "**/*.spec.ts",
     "**/*.test.ts",
     "**/*.stories.tsx",
-    "**/*.mdx"
+    "**/*.mdx",
+    "**/__mocks__/*",
+    "**/__fixtures__/*"
   ],
   "references": [
-    { "path": "./tsconfig.node.json" }
+    { "path": "./tsconfig.node.json" },
+    { "path": "./tsconfig.vitest.json" }
   ]
 }
