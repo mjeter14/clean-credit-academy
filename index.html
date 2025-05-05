@@ -8,9 +8,8 @@
   </head>
   <body>
     <div id="root"></div>
--   <!-- relative import won’t resolve at build time -->
--   <script type="module" src="./src/main.tsx"></script>
-+   <!-- absolute import from project root (required by Vite) -->
-+   <script type="module" src="/src/main.tsx"></script>
+    <!-- ⚠️ Must begin with a slash so Vite can resolve /src/main.tsx correctly -->
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
+
